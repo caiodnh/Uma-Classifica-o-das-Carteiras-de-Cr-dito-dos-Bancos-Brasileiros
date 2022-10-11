@@ -39,12 +39,11 @@ def make_carteiras(estban):
   return carteiras, volume_total, verbetes
 
 # O Banco Western Union não tem dados em vários meses, então decidimos removê-lo da nossa análise.
-def find_groups(carteiras, volume_total, seed = None, centers = None, n_clusters = 5):
-  # Remove bancos outliers
+def run_kmeans(carteiras, seed = None, centers = None, n_clusters = 5):
+  # Remove bancos problemáticos
   carteiras_bulk = carteiras.drop(["CAIXA ECONOMICA FEDERAL","BANCO JOHN DEERE S.A.","BCO WESTERN UNION"])
 
-  # Roda o KMeans
-  # Se centros iniciais são dados, a gente usa eles
+  # Se centros são dados, o algoritmo inicia com eles
   if centers is None:
     kmeans = KMeans(n_clusters=n_clusters, random_state=seed)
   else:
@@ -53,26 +52,29 @@ def find_groups(carteiras, volume_total, seed = None, centers = None, n_clusters
 
   kmeans.fit(carteiras_bulk)
 
-  # Escreve os cetros dos grupos num DataFrame
+  return kmeans
+
+def find_centers(carteiras, kmeans = None):
+  if kmeans is None:
+    kmeans = run_kmeans(carteiras)
   centers = pd.DataFrame(kmeans.cluster_centers_, columns= carteiras.columns)
+  return centers
 
-  # Coloca o nome dos bancos no resultado
-  clusters = pd.Series(kmeans.labels_, index=carteiras_bulk.index)
+def sizes(carteiras, kmeans = None):
+  if kmeans is None:
+    kmeans = run_kmeans(carteiras)
+  clusters = pd.Series(kmeans.labels_)
+  return clusters.groupby(clusters).count()
 
-  # Coloca a Caixa e John Deere de volta
-  back_in = pd.Series([n_clusters,n_clusters+1], index=["CAIXA ECONOMICA FEDERAL", "BANCO JOHN DEERE S.A."])
+def clusters_and_vol(carteiras, volume_total, kmeans = None):
+  if kmeans is None:
+    kmeans = run_kmeans(carteiras)
 
-  more_clusters = pd.concat(objs = [clusters,back_in])
+  outliers = ["CAIXA ECONOMICA FEDERAL", "BANCO JOHN DEERE S.A."]
+  index_bulk = carteiras.index.drop(outliers)
+  clusters = pd.Series(kmeans.labels_, index=index_bulk)
 
-  # Série com os tamanhos dos clusters
-  sizes = more_clusters.groupby(by = more_clusters).count()
+  added_vol = pd.DataFrame(clusters, columns = ["Grupo"]).join(volume_total["Volume"])
+  sorted_vol = added_vol.sort_values(by = ["Grupo", "Volume"], ascending = [True,False])
 
-  # DataFrame com os bancos com seus clusters e o volume de crédito, ordenada
-  clusters_and_vol = pd.DataFrame(more_clusters, columns = ["Grupo"]).join(volume_total["Volume"])
-  clusters_and_vol = clusters_and_vol.sort_values(by = ["Grupo", "Volume"], ascending = [True,False])
-
-  return centers, sizes, clusters_and_vol
-
-estban = read_estban(202206)
-cart, vol, verbetes = make_carteiras(estban)
-center, sizes, c_vol = find_groups(cart, vol, seed = 131)
+  return sorted_vol
