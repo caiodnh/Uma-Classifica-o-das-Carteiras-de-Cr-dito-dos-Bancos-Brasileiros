@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
+from sklearn.cluster import KMeans
 
 # Esse mini-projeto tem como objetivo para classificar carteiras de crédito dos bancos brasileiros usando dados do Banco Central.
 
@@ -42,3 +43,19 @@ credito_nao_160 = credito_nacional.filter(regex = r"1(6[1-9]|7)", axis = 1)
 somas = credito_nao_160.sum(axis=1)
 
 check = abs(somas - credito["160"])
+
+# Verificamos que o valor máximo de `check` é 47 reais, claramente um pequeno erro de ponto flutuante dado a ordem de grandeza dos nossos dados
+# Ordenando os dados, vemos que o eles variam de 200 mil a quase 1 trilhão de reais.
+
+# Vamos manter os dados ordenados por volume total para ser mais fácil de interpretar
+
+credito_nacional = credito_nacional.sort_values(by = "160")
+
+# Mas queremos classificar as carteiras de crédito, ou seja, as proporções nos diferentes verbetes
+
+carteiras = credito_nacional.filter(regex = r"1(6[1-9]|7)", axis = 1).div(credito_nacional["160"], axis=0)
+
+# O plano agora é agrupar os bancos por carteiras semelhantes.
+# Para isso vamos usar o kmeans.
+# É difícil decidir quantos grupos queremos. Uma primeira euristica é o "método dos cotovelos".
+
