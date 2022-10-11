@@ -42,7 +42,7 @@ credito_nao_160 = credito_nacional.filter(regex = r"1(6[1-9]|7)", axis = 1)
 
 somas = credito_nao_160.sum(axis=1)
 
-check = abs(somas - credito["160"])
+check = abs(somas - credito_nacional["160"])
 
 # Verificamos que o valor máximo de `check` é 47 reais, claramente um pequeno erro de ponto flutuante dado a ordem de grandeza dos nossos dados
 # Ordenando os dados, vemos que o eles variam de 200 mil a quase 1 trilhão de reais.
@@ -61,7 +61,7 @@ carteiras = credito_nacional.filter(regex = r"1(6[1-9]|7)", axis = 1).div(credit
 
 inertias = []
 for k in range(1, 11):
-  kmeans = KMeans(n_clusters=k, random_state=131)
+  kmeans = KMeans(n_clusters=k)
   kmeans.fit(carteiras)
   inertias.append(kmeans.inertia_)
 
@@ -73,9 +73,35 @@ for k in range(1, 11):
 # plt.show()
 
 # Olhando para o gráfico, o número de clusters deveria ser 3.
-# Vamos ver o que isso nos dá
+# Vamos ver o que isso nos dá.
+# Escolhemos uma seed para a aleatoriade para o resultado ser reproduzível.
 
-kmeans = KMeans(n_clusters=3, random_state=131)
+seed = 131
+
+kmeans = KMeans(n_clusters=3, random_state=seed)
 kmeans.fit(carteiras)
 
-print(kmeans.cluster_centers_)
+# print(kmeans.cluster_centers_.round(2))
+# O que significa cada coluna?
+
+# print(verbetes)
+
+# Esses clusteres não parecem com o esperado. 
+# Créditos imobiliários não apareceram e os créditos para agro apareceram com peso muito pequeno. 
+# Talvez realmente poucos bancos trabalham nessas áreas, mas será o caso?
+
+print(carteiras.max())
+
+# Muitas colunas são nulas mesmo, mas financiamentos imobiliários e agro de fato são relevantes para alguns bancos. Talvez sejam poucos, e por isso 3 grupos não são capazes de classificálos.
+
+# Vamos olhar para os créditos imobiliários
+print(carteiras.sort_values(by = "169").round(2).to_string())
+
+# Certamente a Caixa é um outlier. E temos ainda alguns outros poucos bancos que também investem em crédito imobiliário.
+
+# Agora vamos para o agro:
+
+print(carteiras.sort_values(by = "163").round(2).to_string())
+
+# O Banco John Deere também é um outlier. E também temos alguns bancos que investem em agro.
+
