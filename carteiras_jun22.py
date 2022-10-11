@@ -59,3 +59,15 @@ carteiras = credito_nacional.filter(regex = r"1(6[1-9]|7)", axis = 1).div(credit
 # Para isso vamos usar o kmeans.
 # É difícil decidir quantos grupos queremos. Uma primeira euristica é o "método dos cotovelos".
 
+inertias = []
+for k in range(1, 11):
+  kmeans = KMeans(n_clusters=k, random_state=131)
+  kmeans.fit(carteiras)
+  inertias.append(kmeans.inertia_)
+
+plt.style.use("fivethirtyeight")
+plt.plot(range(1,11), inertias)
+plt.xticks(range(1,11))
+plt.xlabel("Number of Clusters")
+plt.ylabel("Inertia")
+plt.show()
