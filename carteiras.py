@@ -32,9 +32,9 @@ def make_carteiras(estban):
 
   credito_sum = credito_sum.rename(columns=get_num).sort_values(by = "160")
 
-  volume_total = pd.DataFrame(credito_sum["160"], columns = ["Volume"])
-
   carteiras = credito_sum.filter(regex = r"1(6[1-9]|7)", axis = 1).div(credito_sum["160"], axis=0)
+  
+  volume_total = pd.DataFrame(credito_sum["160"]).rename(columns={"160":"Volume"})
 
   return carteiras, volume_total, verbetes
 
@@ -53,6 +53,9 @@ def find_groups(carteiras, volume_total, seed = None, centers = None, n_clusters
 
   kmeans.fit(carteiras_bulk)
 
+  # Escreve os cetros dos grupos num DataFrame
+  centers = pd.DataFrame(kmeans.cluster_centers_, columns= carteiras.columns)
+
   # Coloca o nome dos bancos no resultado
   clusters = pd.Series(kmeans.labels_, index=carteiras_bulk.index)
 
@@ -68,8 +71,8 @@ def find_groups(carteiras, volume_total, seed = None, centers = None, n_clusters
   clusters_and_vol = pd.DataFrame(more_clusters, columns = ["Grupo"]).join(volume_total["Volume"])
   clusters_and_vol = clusters_and_vol.sort_values(by = ["Grupo", "Volume"], ascending = [True,False])
 
-  return kmeans, sizes, clusters_and_vol
+  return centers, sizes, clusters_and_vol
 
 estban = read_estban(202206)
 cart, vol, verbetes = make_carteiras(estban)
-km, sizes, c_vol = find_groups(cart, vol)
+center, sizes, c_vol = find_groups(cart, vol, seed = 131)
