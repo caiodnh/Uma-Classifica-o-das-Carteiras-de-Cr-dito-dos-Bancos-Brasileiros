@@ -19,7 +19,7 @@ def read_estban(YEARMONTH):
 
     return estban
 
-def make_carteiras(estban):
+def make_sum(estban):
   credito = estban.filter(regex = r"NOME_INSTITUICAO|VERBETE_1(6|7)", axis = 1)
 
   credito_sum = credito.groupby(by=["NOME_INSTITUICAO"]).sum()
@@ -31,6 +31,11 @@ def make_carteiras(estban):
     return match.group(0)
 
   credito_sum = credito_sum.rename(columns=get_num).sort_values(by = "160")
+
+  return credito_sum, verbetes
+
+def make_carteiras(estban):
+  credito_sum, verbetes = make_sum(estban)
 
   carteiras = credito_sum.filter(regex = r"1(6[1-9]|7)", axis = 1).div(credito_sum["160"], axis=0)
   
@@ -70,7 +75,7 @@ def clusters_and_vol(carteiras, volume_total, kmeans = None, seed = None, center
   if kmeans is None:
     kmeans = run_kmeans(carteiras, seed = seed, centers = centers, n_clusters = n_clusters)
 
-  outliers = ["CAIXA ECONOMICA FEDERAL", "BANCO JOHN DEERE S.A."]
+  outliers = ["CAIXA ECONOMICA FEDERAL","BANCO JOHN DEERE S.A.","BCO WESTERN UNION"]
   index_bulk = carteiras.index.drop(outliers)
   clusters = pd.Series(kmeans.labels_, index=index_bulk)
 
