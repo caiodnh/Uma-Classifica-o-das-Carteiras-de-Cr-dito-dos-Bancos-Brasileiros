@@ -65,9 +65,17 @@ for k in range(1, 11):
   kmeans.fit(carteiras)
   inertias.append(kmeans.inertia_)
 
-plt.style.use("fivethirtyeight")
-plt.plot(range(1,11), inertias)
-plt.xticks(range(1,11))
-plt.xlabel("Number of Clusters")
-plt.ylabel("Inertia")
-plt.show()
+# plt.style.use("fivethirtyeight")
+# plt.plot(range(1,11), inertias)
+# plt.xticks(range(1,11))
+# plt.xlabel("Number of Clusters")
+# plt.ylabel("Inertia")
+# plt.show()
+
+# Olhando para o gráfico, o número de clusters deveria ser 3.
+# Vamos ver o que isso nos dá
+
+kmeans = KMeans(n_clusters=3, random_state=131)
+kmeans.fit(carteiras)
+
+print(kmeans.cluster_centers_)
