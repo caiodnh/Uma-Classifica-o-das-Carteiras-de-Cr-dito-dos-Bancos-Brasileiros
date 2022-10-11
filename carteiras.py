@@ -54,21 +54,21 @@ def run_kmeans(carteiras, seed = None, centers = None, n_clusters = 5):
 
   return kmeans
 
-def find_centers(carteiras, kmeans = None):
+def find_centers(carteiras, kmeans = None, seed = None, centers = None, n_clusters = 5):
   if kmeans is None:
-    kmeans = run_kmeans(carteiras)
+    kmeans = run_kmeans(carteiras, seed = seed, centers = centers, n_clusters = n_clusters)
   centers = pd.DataFrame(kmeans.cluster_centers_, columns= carteiras.columns)
   return centers
 
-def sizes(carteiras, kmeans = None):
+def sizes(carteiras, kmeans = None, seed = None, centers = None, n_clusters = 5):
   if kmeans is None:
-    kmeans = run_kmeans(carteiras)
+    kmeans = run_kmeans(carteiras, seed = seed, centers = centers, n_clusters = n_clusters)
   clusters = pd.Series(kmeans.labels_)
   return clusters.groupby(clusters).count()
 
-def clusters_and_vol(carteiras, volume_total, kmeans = None):
+def clusters_and_vol(carteiras, volume_total, kmeans = None, seed = None, centers = None, n_clusters = 5):
   if kmeans is None:
-    kmeans = run_kmeans(carteiras)
+    kmeans = run_kmeans(carteiras, seed = seed, centers = centers, n_clusters = n_clusters)
 
   outliers = ["CAIXA ECONOMICA FEDERAL", "BANCO JOHN DEERE S.A."]
   index_bulk = carteiras.index.drop(outliers)
