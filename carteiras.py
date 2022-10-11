@@ -1,12 +1,11 @@
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import re
 from sklearn.cluster import KMeans
 
 # No notebook Carteiras_Junho_2022.ipynb exploramos os dados do mês de junho/2022.
 # Aqui vamos abstrair em funções a parte importante do que foi feito lá.
 
+# A função abaixo apenas lê um arquivo ESTBAN
 def read_estban(YEARMONTH):
     YEARMONTH = str(YEARMONTH)
     file = YEARMONTH + "_ESTBAN.CSV"
@@ -19,6 +18,8 @@ def read_estban(YEARMONTH):
 
     return estban
 
+# `make_sum` retorna apenas os créditos, mas somados em todos os municípios.
+# Também deixa os nomes das colunas apenas números e retorna os verbetes para leitura futura
 def make_sum(estban):
   credito = estban.filter(regex = r"NOME_INSTITUICAO|VERBETE_1(6|7)", axis = 1)
 
@@ -34,6 +35,7 @@ def make_sum(estban):
 
   return credito_sum, verbetes
 
+# A próxima função faz as divisões para termos apenas as carteiras. Recebe direto o estban por simplificação
 def make_carteiras(estban):
   credito_sum, verbetes = make_sum(estban)
 
@@ -43,9 +45,10 @@ def make_carteiras(estban):
 
   return carteiras, volume_total, verbetes
 
-# O Banco Western Union não tem dados em vários meses, então decidimos removê-lo da nossa análise.
+# Preparar os dados e rodar o kmeans
 def run_kmeans(carteiras, seed = None, centers = None, n_clusters = 5):
   # Remove bancos problemáticos
+  # O Banco Western Union não tem dados em vários meses, então decidimos removê-lo da nossa análise
   carteiras_bulk = carteiras.drop(["CAIXA ECONOMICA FEDERAL","BANCO JOHN DEERE S.A.","BCO WESTERN UNION"])
 
   # Se centros são dados, o algoritmo inicia com eles
@@ -59,18 +62,21 @@ def run_kmeans(carteiras, seed = None, centers = None, n_clusters = 5):
 
   return kmeans
 
+# Retorna os centros dos grupos como um DataFrame, para ser mais fácil de ler
 def find_centers(carteiras, kmeans = None, seed = None, centers = None, n_clusters = 5):
   if kmeans is None:
     kmeans = run_kmeans(carteiras, seed = seed, centers = centers, n_clusters = n_clusters)
   centers = pd.DataFrame(kmeans.cluster_centers_, columns= carteiras.columns)
   return centers
 
+# Retorna os tamanhos dos grupos
 def sizes(carteiras, kmeans = None, seed = None, centers = None, n_clusters = 5):
   if kmeans is None:
     kmeans = run_kmeans(carteiras, seed = seed, centers = centers, n_clusters = n_clusters)
   clusters = pd.Series(kmeans.labels_)
   return clusters.groupby(clusters).count()
 
+# Junta os grupos com os volumes totais de crédito
 def clusters_and_vol(carteiras, volume_total, kmeans = None, seed = None, centers = None, n_clusters = 5):
   if kmeans is None:
     kmeans = run_kmeans(carteiras, seed = seed, centers = centers, n_clusters = n_clusters)
